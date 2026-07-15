@@ -95,26 +95,43 @@
   // Active navigation link highlighting
   function updateActiveNavLink() {
     const navLinks = document.querySelectorAll('.nav-link');
-    const sections = document.querySelectorAll('.content-section, .hero');
+    if (navLinks.length === 0) return;
     
-    if (sections.length === 0) return;
+    const headerOffset = 150; // Threshold below header (80px header + buffer)
+    let currentSection = '';
     
-    const scrollPos = window.scrollY + 200; // Offset for header
-    let currentSection = 'about'; // Default
+    // Check if we are at the bottom of the page
+    const isAtBottom = (window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 10;
     
-    // Find which section we've scrolled past (iterate through all sections)
-    sections.forEach(section => {
-      const anchor = section.querySelector('.anchor');
-      if (!anchor) return;
-      
-      const sectionId = anchor.getAttribute('id');
-      const sectionTop = section.offsetTop;
-      
-      // If we've scrolled past this section's top, it becomes the current section
-      if (scrollPos >= sectionTop) {
-        currentSection = sectionId;
+    if (isAtBottom) {
+      const lastHref = navLinks[navLinks.length - 1].getAttribute('href');
+      if (lastHref && lastHref.startsWith('#')) {
+        currentSection = lastHref.substring(1);
       }
-    });
+    } else {
+      // Find the last section/anchor that has scrolled past the threshold
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || !href.startsWith('#')) return;
+        
+        const target = document.getElementById(href.substring(1));
+        if (!target) return;
+        
+        const rect = target.getBoundingClientRect();
+        // If the top of the target is above the threshold, it is active
+        if (rect.top <= headerOffset) {
+          currentSection = href.substring(1);
+        }
+      });
+    }
+    
+    // If we haven't scrolled past any section yet, default to the first link's section
+    if (!currentSection && navLinks.length > 0) {
+      const firstHref = navLinks[0].getAttribute('href');
+      if (firstHref && firstHref.startsWith('#')) {
+        currentSection = firstHref.substring(1);
+      }
+    }
     
     // Update active states
     navLinks.forEach(link => {
